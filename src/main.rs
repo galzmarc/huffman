@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 
@@ -24,6 +25,14 @@ fn main() {
     // Create a hashmap mapping each character with its frequency (i.e. how many times it appears in the text)
     let freq_map = utils::analyze_frequency(&contents);
 
-    let tree = utils::HuffmanNode::new(&freq_map);
-    println!("{:?}", tree);
+    // Build the Huffman tree using the frequency map
+    let tree = utils::HuffmanNode::build_tree(&freq_map);
+
+    // Create the prefix-code table and encode the tree
+    let mut codes = HashMap::new();
+    tree.encode(String::new(), &mut codes);
+
+    let encoded_text = utils::encode_text(&contents, &codes);
+    
+    println!("{:?}", encoded_text);
 }

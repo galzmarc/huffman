@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::io::Write;
 
 mod utils;
 
@@ -13,7 +14,7 @@ fn main() {
         std::process::exit(1);
     });
 
-    // Attempt to read the file
+    // Attempt to read the input file
     let contents = match fs::read_to_string(&file_path) {
         Ok(contents) => contents,
         Err(err) => {
@@ -33,6 +34,25 @@ fn main() {
     tree.encode(String::new(), &mut codes);
 
     let encoded_text = utils::encode_text(&contents, &codes);
-    
-    println!("{:?}", encoded_text);
+
+    // Create a new file adding 'encoded' to the original filename
+    let filename: Vec<_> = file_path.split(".").collect();
+    let path = String::from(filename[0].to_owned() + "_encoded.txt");
+
+    let mut file = match fs::File::create(path) {
+        Ok(file) => file,
+        Err(err) => {
+            eprintln!("Error: Error creating file: {}", err);
+            std::process::exit(1);
+        }
+    };
+
+    // Write the encoded text to the newly created file
+    match file.write_all(&encoded_text) {
+        Ok(_) => (),
+        Err(err) => {
+            eprintln!("Error: Error writing to file: {}", err);
+            std::process::exit(1);
+        }
+    };
 }

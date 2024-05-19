@@ -1,11 +1,25 @@
 use std::collections::{BinaryHeap, HashMap};
+use std::cmp::Ordering;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct HuffmanNode {
     symbol: Option<char>,
     freq: usize,
     left: Box<Option<HuffmanNode>>,
     right: Box<Option<HuffmanNode>>,
+}
+
+impl Ord for HuffmanNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Reverse the ordering for min-heap behavior
+        other.freq.cmp(&self.freq)
+    }
+}
+
+impl PartialOrd for HuffmanNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl HuffmanNode {
@@ -53,6 +67,32 @@ impl HuffmanNode {
             }
         }
     }
+
+    pub fn decode(&self, text: &str) -> String {
+        let mut decoded_text = String::new();
+        let mut current_node = self;
+        for bit in text.chars() {
+            match bit {
+                '0' => {
+                    if let Some(ref left) = *current_node.left {
+                        current_node = left;
+                    }
+                }
+                '1' => {
+                    if let Some(ref right) = *current_node.right {
+                        current_node = right;
+                    }
+                }
+                _ => panic!("Invalid bit in encoded string!"),
+            }
+            // If we reach a leaf node, append the corresponding character and reset to root
+            if let Some(symbol) = current_node.symbol {
+                decoded_text.push(symbol);
+                current_node = self // Reset to root
+            }
+        }
+        decoded_text
+    }
 }
 
 pub fn analyze_frequency(contents: &str) -> HashMap<char, usize> {
@@ -66,12 +106,31 @@ pub fn analyze_frequency(contents: &str) -> HashMap<char, usize> {
     freq_map
 }
 
-pub fn encode_text(text: &str, codes: &HashMap<char, String>) -> String {
-    let mut encoded_text = String::new();
+pub fn encode_text(text: &str, codes: &HashMap<char, String>) -> Vec<u8> {
+    let mut packed_data = Vec::new();
+    let mut buffer = 0u8;
+    let mut bits_filled = 0;
+
     for character in text.chars() {
         if let Some(code) = codes.get(&character) {
-            encoded_text.push_str(code)
+            for bit in code.chars() {
+                buffer <<= 1;
+                if bit == '1' {
+                    buffer |= 1;
+                }
+                bits_filled += 1;
+
+                if bits_filled == 8 {
+                    packed_data.push(buffer);
+                    buffer = 0;
+                    bits_filled = 0;
+                }
+            }
         }
     }
-    encoded_text
+    if bits_filled > 0 {
+        buffer <<= 8 - bits_filled;
+        packed_data.push(buffer);
+    }
+    packed_data
 }

@@ -63,5 +63,17 @@ fn encoder(file_path: &str) {
 }
 
 fn decoder(file_path: &str) {
-    todo!()
+    // Attempt to read the input file
+    let contents = match fs::read(&file_path) {
+        Ok(contents) => contents,
+        Err(err) => {
+            eprintln!("Error: Error reading file {}: {}", file_path, err);
+            std::process::exit(1);
+        }
+    };
+
+    // Decode text
+    let decoded_text = decode(&contents);
+
+    println!("{}", decoded_text);
 }
